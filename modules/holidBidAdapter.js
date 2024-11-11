@@ -86,35 +86,33 @@ export const spec = {
     const syncs = [{
       type: 'image',
       url: 'https://track.adform.net/Serving/TrackPoint/?pm=2992097&lid=132720821'
-    }]
+    }];
 
-    if (!serverResponse || serverResponse.length === 0) {
-      return syncs
+    if (!serverResponse || (Array.isArray(serverResponse) && serverResponse.length === 0)) {
+      return syncs;
     }
 
-    const bidders = getBidders(serverResponse)
-    // note this only does the iframe sync when gdpr consent object exists to match previous behavior (generate error on gdprconsent not existing)
-    if (optionsType.iframeEnabled && bidders && gdprConsent) {
-      const queryParams = []
+    const responses = Array.isArray(serverResponse) ? serverResponse : [serverResponse];
+    const bidders = getBidders(responses);
 
-      queryParams.push('bidders=' + bidders)
-      queryParams.push('gdpr=' + +gdprConsent?.gdprApplies)
-      queryParams.push('gdpr_consent=' + gdprConsent?.consentString)
-      queryParams.push('usp_consent=' + (uspConsent || ''))
+    if (optionsType.iframeEnabled && bidders) {
+      const queryParams = [];
 
-      let strQueryParams = queryParams.join('&')
+      queryParams.push('bidders=' + bidders);
+      queryParams.push('gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0));
+      queryParams.push('gdpr_consent=' + encodeURIComponent(gdprConsent?.consentString || ''));
+      queryParams.push('usp_consent=' + encodeURIComponent(uspConsent || ''));
+      queryParams.push('type=iframe');
 
-      if (strQueryParams.length > 0) {
-        strQueryParams = '?' + strQueryParams
-      }
+      const strQueryParams = '?' + queryParams.join('&');
 
       syncs.push({
         type: 'iframe',
-        url: COOKIE_SYNC_ENDPOINT + strQueryParams + '&type=iframe',
-      })
+        url: COOKIE_SYNC_ENDPOINT + strQueryParams,
+      });
     }
 
-    return syncs
+    return syncs;
   },
 
   onBidWon(bid) {
@@ -155,13 +153,13 @@ function buildStoredRequest(bid) {
   }
 }
 
-function getBidders(serverResponse) {
-  const bidders = serverResponse
-    .map((res) => Object.keys(res.body.ext.responsetimemillis || []))
-    .flat(1)
+function getBidders(responses) {
+  const bidders = responses
+    .map(res => Object.keys(res.body.ext?.responsetimemillis || {}))
+    .flat();
 
   if (bidders.length) {
-    return encodeURIComponent(JSON.stringify([...new Set(bidders)]))
+    return encodeURIComponent(JSON.stringify([...new Set(bidders)]));
   }
 }
 

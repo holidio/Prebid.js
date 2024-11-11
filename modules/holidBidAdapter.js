@@ -1,21 +1,21 @@
 import {
   deepAccess,
-  deepSetValue, getBidIdParameter,
+  deepSetValue,
+  getBidIdParameter,
   isStr,
   logMessage,
   triggerPixel,
 } from '../src/utils.js';
-import {BANNER} from '../src/mediaTypes.js';
+import { BANNER } from '../src/mediaTypes.js';
+import { registerBidder } from '../src/adapters/bidderFactory.js';
 
-import {registerBidder} from '../src/adapters/bidderFactory.js';
-
-const BIDDER_CODE = 'holid'
-const GVLID = 1177
-const ENDPOINT = 'https://helloworld.holid.io/openrtb2/auction'
-const COOKIE_SYNC_ENDPOINT = 'https://null.holid.io/sync.html'
-const TIME_TO_LIVE = 300
-const TMAX = 500
-let wurlMap = {}
+const BIDDER_CODE = 'holid';
+const GVLID = 1177;
+const ENDPOINT = 'https://helloworld.holid.io/openrtb2/auction';
+const COOKIE_SYNC_ENDPOINT = 'https://null.holid.io/sync.html';
+const TIME_TO_LIVE = 300;
+const TMAX = 500;
+let wurlMap = {};
 
 export const spec = {
   code: BIDDER_CODE,
@@ -23,22 +23,22 @@ export const spec = {
   supportedMediaTypes: [BANNER],
 
   isBidRequestValid: function (bid) {
-    return !!bid.params.adUnitID
+    return !!bid.params.adUnitID;
   },
 
   buildRequests: function (validBidRequests, bidderRequest) {
     return validBidRequests.map((bid) => {
       const requestData = {
         ...bid.ortb2,
-        source: {schain: bid.schain},
+        source: { schain: bid.schain },
         id: bidderRequest.bidderRequestId,
         imp: [getImp(bid)],
         tmax: TMAX,
-        ...buildStoredRequest(bid)
-      }
+        ...buildStoredRequest(bid),
+      };
 
       if (bid.userIdAsEids) {
-        deepSetValue(requestData, 'user.ext.eids', bid.userIdAsEids)
+        deepSetValue(requestData, 'user.ext.eids', bid.userIdAsEids);
       }
 
       return {
@@ -46,21 +46,21 @@ export const spec = {
         url: ENDPOINT,
         data: JSON.stringify(requestData),
         bidId: bid.bidId,
-      }
-    })
+      };
+    });
   },
 
   interpretResponse: function (serverResponse, bidRequest) {
-    const bidResponses = []
+    const bidResponses = [];
 
     if (!serverResponse.body.seatbid) {
-      return []
+      return [];
     }
 
     serverResponse.body.seatbid.map((response) => {
       response.bid.map((bid) => {
-        const requestId = bidRequest.bidId
-        const wurl = deepAccess(bid, 'ext.prebid.events.win')
+        const requestId = bidRequest.bidId;
+        const wurl = deepAccess(bid, 'ext.prebid.events.win');
         const bidResponse = {
           requestId,
           cpm: bid.price,
@@ -71,22 +71,24 @@ export const spec = {
           currency: serverResponse.body.cur,
           netRevenue: true,
           ttl: TIME_TO_LIVE,
-        }
+        };
 
-        addWurl(requestId, wurl)
+        addWurl(requestId, wurl);
 
-        bidResponses.push(bidResponse)
-      })
-    })
+        bidResponses.push(bidResponse);
+      });
+    });
 
-    return bidResponses
+    return bidResponses;
   },
 
   getUserSyncs(optionsType, serverResponse, gdprConsent, uspConsent) {
-    const syncs = [{
-      type: 'image',
-      url: 'https://track.adform.net/Serving/TrackPoint/?pm=2992097&lid=132720821'
-    }];
+    const syncs = [
+      {
+        type: 'image',
+        url: 'https://track.adform.net/Serving/TrackPoint/?pm=2992097&lid=132720821',
+      },
+    ];
 
     if (!serverResponse || (Array.isArray(serverResponse) && serverResponse.length === 0)) {
       return syncs;
@@ -116,29 +118,28 @@ export const spec = {
   },
 
   onBidWon(bid) {
-    const wurl = getWurl(bid.requestId)
+    const wurl = getWurl(bid.requestId);
     if (wurl) {
-      logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`)
-      triggerPixel(wurl)
-      removeWurl(bid.requestId)
+      logMessage(`Invoking image pixel for wurl on BID_WIN: "${wurl}"`);
+      triggerPixel(wurl);
+      removeWurl(bid.requestId);
     }
-  }
-}
+  },
+};
 
 function getImp(bid) {
-  const imp = buildStoredRequest(bid)
-  const sizes =
-    bid.sizes && !Array.isArray(bid.sizes[0]) ? [bid.sizes] : bid.sizes
+  const imp = buildStoredRequest(bid);
+  const sizes = bid.sizes && !Array.isArray(bid.sizes[0]) ? [bid.sizes] : bid.sizes;
 
   if (deepAccess(bid, 'mediaTypes.banner')) {
     imp.banner = {
       format: sizes.map((size) => {
-        return { w: size[0], h: size[1] }
+        return { w: size[0], h: size[1] };
       }),
-    }
+    };
   }
 
-  return imp
+  return imp;
 }
 
 function buildStoredRequest(bid) {
@@ -150,12 +151,12 @@ function buildStoredRequest(bid) {
         },
       },
     },
-  }
+  };
 }
 
 function getBidders(responses) {
   const bidders = responses
-    .map(res => Object.keys(res.body.ext?.responsetimemillis || {}))
+    .map((res) => Object.keys(res.body.ext?.responsetimemillis || {}))
     .flat();
 
   if (bidders.length) {
@@ -165,18 +166,18 @@ function getBidders(responses) {
 
 function addWurl(requestId, wurl) {
   if (isStr(requestId)) {
-    wurlMap[requestId] = wurl
+    wurlMap[requestId] = wurl;
   }
 }
 
 function removeWurl(requestId) {
-  delete wurlMap[requestId]
+  delete wurlMap[requestId];
 }
 
 function getWurl(requestId) {
   if (isStr(requestId)) {
-    return wurlMap[requestId]
+    return wurlMap[requestId];
   }
 }
 
-registerBidder(spec)
+registerBidder(spec);

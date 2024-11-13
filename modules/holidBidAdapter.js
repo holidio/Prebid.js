@@ -101,9 +101,22 @@ export const spec = {
       const queryParams = [];
 
       queryParams.push('bidders=' + bidders);
-      queryParams.push('gdpr=' + (gdprConsent && gdprConsent.gdprApplies ? 1 : 0));
-      queryParams.push('gdpr_consent=' + encodeURIComponent(gdprConsent?.consentString || ''));
+
+      // Include gdprConsent if it exist
+      if (gdprConsent) {
+        queryParams.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
+        queryParams.push(
+          'gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
+        );
+      } else {
+        // Assume GDPR does not apply if gdprConsent is missing
+        queryParams.push('gdpr=0');
+        queryParams.push('gdpr_consent=');
+      }
+
+      // Handle uspConsent
       queryParams.push('usp_consent=' + encodeURIComponent(uspConsent || ''));
+
       queryParams.push('type=iframe');
 
       const strQueryParams = '?' + queryParams.join('&');

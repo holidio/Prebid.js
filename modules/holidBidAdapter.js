@@ -105,13 +105,11 @@ export const spec = {
       // Include gdprConsent if it exist
       if (gdprConsent) {
         queryParams.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-        queryParams.push(
-          'gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
+        queryParams.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
         );
       } else {
         // Assume GDPR does not apply if gdprConsent is missing
         queryParams.push('gdpr=0');
-        queryParams.push('gdpr_consent=');
       }
 
       // Handle uspConsent

@@ -116,11 +116,8 @@ export const spec = {
       // Handle CCPA consent using `us_privacy`
       if (typeof uspConsent !== 'undefined') {
         queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
-      } else {
-        // Assume CCPA does not apply and set to default "1---"
-        // Note: Detta ska endast göras om du är säker på att CCPA inte gäller för användaren
-        queryParams.push('us_privacy=' + encodeURIComponent('1---'));
       }
+      // If CCPA inte är tillämpligt, utelämna `us_privacy`
 
       queryParams.push('type=iframe');
 

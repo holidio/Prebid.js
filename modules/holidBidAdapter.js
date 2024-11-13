@@ -97,23 +97,29 @@ export const spec = {
     const responses = Array.isArray(serverResponse) ? serverResponse : [serverResponse];
     const bidders = getBidders(responses);
 
+    // Always perform iframe user syncs if iframe syncing is enabled and bidders are present
     if (optionsType.iframeEnabled && bidders) {
       const queryParams = [];
 
       queryParams.push('bidders=' + bidders);
 
-      // Include gdprConsent if it exist
+      // Handle GDPR consent
       if (gdprConsent) {
+        // Include GDPR consent information
         queryParams.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
-        queryParams.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || '')
-        );
+        queryParams.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
       } else {
         // Assume GDPR does not apply if gdprConsent is missing
         queryParams.push('gdpr=0');
       }
 
-      // Handle uspConsent
-      queryParams.push('usp_consent=' + encodeURIComponent(uspConsent || ''));
+      // Handle USP consent
+      if (typeof uspConsent !== 'undefined') {
+        queryParams.push('usp_consent=' + encodeURIComponent(uspConsent));
+      } else {
+        // Assume CCPA does not apply and set to default "1---"
+        queryParams.push('usp_consent=' + encodeURIComponent('1---'));
+      }
 
       queryParams.push('type=iframe');
 

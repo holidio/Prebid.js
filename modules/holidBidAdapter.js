@@ -109,16 +109,17 @@ export const spec = {
         queryParams.push('gdpr=' + (gdprConsent.gdprApplies ? 1 : 0));
         queryParams.push('gdpr_consent=' + encodeURIComponent(gdprConsent.consentString || ''));
       } else {
-        // Assume GDPR does not apply if gdprConsent is missing
+        // Assume GDPR does not apply
         queryParams.push('gdpr=0');
       }
 
-      // Handle USP consent
+      // Handle CCPA consent using `us_privacy`
       if (typeof uspConsent !== 'undefined') {
-        queryParams.push('usp_consent=' + encodeURIComponent(uspConsent));
+        queryParams.push('us_privacy=' + encodeURIComponent(uspConsent));
       } else {
         // Assume CCPA does not apply and set to default "1---"
-        queryParams.push('usp_consent=' + encodeURIComponent('1---'));
+        // Note: Detta ska endast göras om du är säker på att CCPA inte gäller för användaren
+        queryParams.push('us_privacy=' + encodeURIComponent('1---'));
       }
 
       queryParams.push('type=iframe');
